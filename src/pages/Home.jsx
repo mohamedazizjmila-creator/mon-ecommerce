@@ -263,13 +263,10 @@ const Home = () => {
                               objectFit: 'contain',
                               padding: '10px'
                             }}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = '/default-image.png'; // MODIFIÉ ICI
-                              e.target.className = 'img-fluid';
-                              e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = '<i className="bi bi-image text-warning fs-1"></i>';
-                            }}
+                          onError={(e) => {
+  e.target.onerror = null;
+  e.target.style.display = 'none';
+}}
                           />
                         ) : (
                           <div className="text-center p-3">

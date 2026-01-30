@@ -213,9 +213,9 @@ const Products = () => {
                           src={getImageUrl(product.imageUrl)} // MODIFIÉ ICI
                           alt={product.nom}
                           style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                    onError={(e) => {
-  e.target.onerror = null; // Important!
-  e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
+onError={(e) => {
+  e.target.onerror = null;
+  e.target.style.display = 'none';
 }}
                         />
                       ) : (
