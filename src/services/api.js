@@ -53,16 +53,24 @@ export const testConnection = async () => {
   }
 };
 export const getImageUrl = (imagePath) => {
-  if (!imagePath) return null;
+  // Si pas d'image, retourne un placeholder
+  if (!imagePath) {
+    return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
+  }
   
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
   
-  // Si le chemin commence déjà par /uploads, ne pas le dupliquer
+  // Si déjà une URL complète
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // Si chemin local
   if (imagePath.startsWith('/uploads/')) {
     return `${API_URL}${imagePath}`;
   }
   
+  // Par défaut
   return `${API_URL}/uploads/${imagePath}`;
 };
-
 export default api;
