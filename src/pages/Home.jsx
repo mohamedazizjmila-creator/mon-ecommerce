@@ -263,10 +263,13 @@ const Home = () => {
                               objectFit: 'contain',
                               padding: '10px'
                             }}
-onError={(e) => {
-  e.target.onerror = null; // Important!
-  e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
-}}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/default-image.png'; // MODIFIÉ ICI
+                              e.target.className = 'img-fluid';
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = '<i className="bi bi-image text-warning fs-1"></i>';
+                            }}
                           />
                         ) : (
                           <div className="text-center p-3">

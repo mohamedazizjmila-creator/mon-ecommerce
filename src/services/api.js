@@ -53,24 +53,34 @@ export const testConnection = async () => {
   }
 };
 export const getImageUrl = (imagePath) => {
-  // 1. Si pas d'image, retourne un placeholder
+  // 1. Si PAS d'image dans la base
   if (!imagePath || imagePath === 'null' || imagePath === 'undefined') {
-    return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
+    return null; // Retourne null pour gérer dans le composant
   }
   
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const BACKEND_URL = 'https://projet-api-v2.onrender.com';
   
   // 2. Si c'est déjà une URL complète
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+    // Si c'est une URL de TON backend, la garder
+    if (imagePath.includes('projet-api-v2.onrender.com')) {
+      return imagePath;
+    }
+    // Sinon, c'est une URL externe → l'IGNORER
+    return null;
   }
   
-  // 3. Si ça commence par /uploads/ (comme ton cas: /uploads/produit_...)
-  if (imagePath.startsWith('/uploads/')) {
-    return `${API_URL}${imagePath}`;
+  // 3. Si c'est un chemin relatif (/uploads/...)
+  if (imagePath.startsWith('/uploads/') || imagePath.startsWith('/images/')) {
+    return `${BACKEND_URL}${imagePath}`;
   }
   
-  // 4. Par défaut (ne devrait pas arriver dans ton cas)
-  return `${API_URL}/uploads/${imagePath}`;
+  // 4. Si c'est juste un nom de fichier
+  if (imagePath.includes('.jpg') || imagePath.includes('.jpeg') || imagePath.includes('.png')) {
+    return `${BACKEND_URL}/uploads/${imagePath}`;
+  }
+  
+  // 5. Par défaut → null
+  return null;
 };
 export default api;
