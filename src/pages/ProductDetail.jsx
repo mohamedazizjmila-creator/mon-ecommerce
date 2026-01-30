@@ -4,6 +4,7 @@ import { productService } from '../services/productService';
 import { panierService } from '../services/panierService';
 import { favoriService } from '../services/favoriService';
 import { authService } from '../services/authService';
+import { getImageUrl } from '../services/api'; // AJOUTE CET IMPORT
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -42,7 +43,6 @@ const ProductDetail = () => {
         setError('Erreur lors du chargement du produit');
       }
       
-      // Essayer la méthode alternative
       await tryAlternativeMethod();
     } finally {
       setLoading(false);
@@ -86,50 +86,27 @@ const ProductDetail = () => {
       console.log(`❤️ État favori: ${response.data.isFavori ? 'favori' : 'non favori'}`);
     } catch (error) {
       console.error('❌ Erreur vérification favori:', error);
-      console.error('Status:', error.response?.status);
-      console.error('Data:', error.response?.data);
       setIsFavori(false);
     }
   };
 
   const handleAddToCart = async () => {
     console.log('🟢 handleAddToCart EXÉCUTÉ !');
-    console.log('ID produit:', id);
-    console.log('Quantité:', quantite);
     
     const user = authService.getCurrentUser();
-    console.log('Utilisateur:', user);
-    
     if (!user) {
-      console.log('❌ Utilisateur non connecté');
       alert('Veuillez vous connecter pour ajouter au panier');
       navigate('/connexion');
       return;
     }
 
-    console.log(`🛒 Appel panierService.ajouterAuPanier(${id}, ${quantite})`);
-    
     setAddingToCart(true);
     try {
-      console.log('📤 Avant appel API...');
-      
       const response = await panierService.ajouterAuPanier(id, quantite);
-      
       console.log('✅ Réponse reçue:', response.data);
       alert(`${product.nom} ajouté au panier !`);
-      
     } catch (error) {
-      console.error('❌ Erreur détaillée:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          data: error.config?.data
-        }
-      });
-      
+      console.error('❌ Erreur détaillée:', error);
       alert('Erreur: ' + (error.response?.data?.error || error.message));
     } finally {
       setAddingToCart(false);
@@ -144,7 +121,6 @@ const ProductDetail = () => {
       return;
     }
 
-    console.log(`❤️ Toggle favori: produit ${id}, actuel: ${isFavori}, utilisateur ${user.id}`);
     setTogglingFavori(true);
     
     try {
@@ -159,27 +135,12 @@ const ProductDetail = () => {
       }
     } catch (error) {
       console.error('❌ Erreur gestion favoris:', error);
-      console.error('Status:', error.response?.status);
-      console.error('Data:', error.response?.data);
-      
-      if (error.message?.includes('Utilisateur non connecté')) {
-        alert('Veuillez vous reconnecter');
-        navigate('/connexion');
-      } else if (error.response?.status === 400) {
-        const errorMsg = error.response.data?.message || 'Paramètres invalides';
-        alert(`Erreur: ${errorMsg}`);
-      } else if (error.response?.status === 401) {
-        alert('Session expirée. Veuillez vous reconnecter.');
-        navigate('/connexion');
-      } else {
-        alert('Erreur lors de la gestion des favoris');
-      }
+      alert('Erreur lors de la gestion des favoris');
     } finally {
       setTogglingFavori(false);
     }
   };
 
-  // FONCTION MODIFIÉE : Commande rapide redirige vers /passer-commande
   const handleCommandeRapide = async () => {
     const user = authService.getCurrentUser();
     if (!user) {
@@ -199,9 +160,7 @@ const ProductDetail = () => {
     }
 
     try {
-      // Ajouter au panier
       await panierService.ajouterAuPanier(id, quantite);
-      // Rediriger vers la page de commande
       navigate('/passer-commande');
     } catch (error) {
       console.error('❌ Erreur commande rapide:', error);
@@ -256,7 +215,6 @@ const ProductDetail = () => {
 
   return (
     <div className="container py-4">
-      {/* Fil d'Ariane */}
       <nav aria-label="breadcrumb" className="mb-4">
         <ol className="breadcrumb">
           <li className="breadcrumb-item">
@@ -285,19 +243,18 @@ const ProductDetail = () => {
       </nav>
 
       <div className="row">
-        {/* Colonne image */}
         <div className="col-md-6 mb-4">
           <div className="card border-0 shadow-sm">
             <div className="card-body text-center p-4">
               {product.imageUrl ? (
                 <img 
-                  src={`http://localhost:8080${product.imageUrl}`}
+                  src={getImageUrl(product.imageUrl)} // MODIFIÉ ICI
                   alt={product.nom}
                   className="img-fluid rounded"
                   style={{ maxHeight: '400px', objectFit: 'contain' }}
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = 'https://via.placeholder.com/400x300?text=Image+non+disponible';
+                    e.target.src = '/default-image.png'; // MODIFIÉ ICI
                   }}
                 />
               ) : (
@@ -310,11 +267,9 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Colonne détails */}
         <div className="col-md-6">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
-              {/* En-tête avec catégorie et favori */}
               <div className="d-flex justify-content-between align-items-start mb-3">
                 {product.categorie && (
                   <span className="badge bg-secondary fs-6">
@@ -330,12 +285,10 @@ const ProductDetail = () => {
                     title={isFavori ? "Retirer des favoris" : "Ajouter aux favoris"}
                   >
                     <i className={`bi ${isFavori ? 'bi-heart-fill' : 'bi-heart'}`}></i>
-                    {togglingFavori ? '...' : ''}
                   </button>
                 )}
               </div>
               
-              {/* Nom et prix */}
               <h1 className="mb-3">{product.nom}</h1>
               <div className="mb-4">
                 <span className="display-4 text-warning fw-bold">{product.prix} €</span>
@@ -344,7 +297,6 @@ const ProductDetail = () => {
                 </span>
               </div>
 
-              {/* Description */}
               <div className="mb-4">
                 <h5 className="fw-bold">
                   <i className="bi bi-card-text me-2"></i>
@@ -353,7 +305,6 @@ const ProductDetail = () => {
                 <p className="text-muted">{product.description || 'Pas de description disponible'}</p>
               </div>
 
-              {/* Quantité */}
               <div className="mb-4">
                 <label className="form-label fw-bold">Quantité</label>
                 <div className="d-flex align-items-center">
@@ -386,7 +337,6 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="d-grid gap-2 mb-4">
                 {product.quantite > 0 ? (
                   <>
@@ -408,7 +358,6 @@ const ProductDetail = () => {
                       )}
                     </button>
                     
-                    {/* BOUTON MODIFIÉ : Utilise la nouvelle fonction handleCommandeRapide */}
                     <button 
                       className="btn btn-success btn-lg py-3"
                       onClick={handleCommandeRapide}
@@ -432,7 +381,6 @@ const ProductDetail = () => {
                 )}
               </div>
 
-              {/* Informations supplémentaires */}
               <div className="mt-4 pt-4 border-top">
                 <h6 className="fw-bold mb-3">
                   <i className="bi bi-info-circle me-2 text-info"></i>
@@ -458,7 +406,6 @@ const ProductDetail = () => {
             </div>
           </div>
           
-          {/* Navigation */}
           <div className="d-flex justify-content-between mt-4">
             <Link to="/produits" className="btn btn-outline-warning">
               <i className="bi bi-arrow-left me-2"></i>
@@ -481,7 +428,6 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      {/* Section produits similaires */}
       {product.categorie && (
         <div className="mt-5 pt-4">
           <h4 className="mb-4">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { productService } from '../services/productService';
+import { getImageUrl } from '../services/api'; // AJOUTE CET IMPORT
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,33 +79,13 @@ const Home = () => {
   // Toutes les catégories avec leurs logos Bootstrap
   const categories = [
     // Catégories principales
-     
     { id: 1, name: 'Informatique', icon: 'bi-pc-display' },
     { id: 2, name: 'Électronique', icon: 'bi-laptop' },
     { id: 3, name: 'Maison', icon: 'bi-house-door' },
     { id: 4, name: 'Sports', icon: 'bi-bicycle' },
     { id: 5, name: 'Beauté', icon: 'bi-droplet' },
     { id: 6, name: 'Loisirs', icon: 'bi-controller' },
-    
-    // Autres catégories
-
-    
   ];
-
-  // Fonction pour obtenir l'URL complète de l'image
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) {
-      return null;
-    }
-    
-    // Si l'URL commence déjà par http, la retourner telle quelle
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // Sinon, ajouter l'URL du backend
-    return `http://localhost:8080${imageUrl}`;
-  };
 
   // Fonction pour formater le nom de catégorie pour l'URL
   const formatCategoryForUrl = (categoryName) => {
@@ -206,8 +187,6 @@ const Home = () => {
             </button>
           </div>
           
-          
-          
           {/* Groupe de catégories par sections */}
           <div className="mt-5">
             <h4 className="mb-4">Catégories populaires</h4>
@@ -277,7 +256,7 @@ const Home = () => {
                       <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
                         {product.imageUrl ? (
                           <img 
-                            src={getImageUrl(product.imageUrl)}
+                            src={getImageUrl(product.imageUrl)} // MODIFIÉ ICI
                             alt={product.nom}
                             className="img-fluid h-100 w-100"
                             style={{ 
@@ -286,7 +265,7 @@ const Home = () => {
                             }}
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = '';
+                              e.target.src = '/default-image.png'; // MODIFIÉ ICI
                               e.target.className = 'img-fluid';
                               e.target.style.display = 'none';
                               e.target.parentElement.innerHTML = '<i className="bi bi-image text-warning fs-1"></i>';

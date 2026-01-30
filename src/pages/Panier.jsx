@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { panierService } from '../services/panierService';
+import { getImageUrl } from '../services/api'; // AJOUTE CET IMPORT
 
 const Panier = () => {
   const [panier, setPanier] = useState(null);
@@ -55,20 +56,7 @@ const Panier = () => {
     }
   };
 
-  // Fonction pour construire l'URL complète de l'image
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) {
-      return 'https://via.placeholder.com/100x100?text=No+Image';
-    }
-    
-    // Si l'URL commence déjà par http, la retourner telle quelle
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // Sinon, ajouter l'URL du backend
-    return `http://localhost:8080${imageUrl}`;
-  };
+  // SUPPRIME L'ANCIENNE FONCTION getImageUrl et utilise celle du service
 
   if (loading) {
     return (
@@ -113,7 +101,7 @@ const Panier = () => {
                     <div key={item.id} className="d-flex border-bottom pb-3 mb-3">
                       <div className="flex-shrink-0">
                         <img 
-                          src={getImageUrl(item.produit?.imageUrl)} 
+                          src={getImageUrl(item.produit?.imageUrl)}  // MODIFIÉ ICI
                           alt={item.produit?.nom || 'Produit'}
                           className="rounded"
                           style={{ 
@@ -123,9 +111,8 @@ const Panier = () => {
                             backgroundColor: '#f8f9fa'
                           }}
                           onError={(e) => {
-                            // En cas d'erreur de chargement de l'image
                             e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/120x120?text=Image+non+disponible';
+                            e.target.src = '/default-image.png'; // CHANGE ICI AUSSI
                           }}
                         />
                       </div>
@@ -217,7 +204,6 @@ const Panier = () => {
                     <span className="text-warning">{total.toFixed(2)} €</span>
                   </div>
                   
-                  {/* BOUTON MODIFIÉ : Remplacement du alert par Link */}
                   <Link 
                     to="/passer-commande" 
                     className="btn btn-warning w-100 mt-4 py-3 fw-bold"

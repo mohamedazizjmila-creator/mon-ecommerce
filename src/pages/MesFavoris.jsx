@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { favoriService } from '../services/favoriService';
 import { panierService } from '../services/panierService';
+import { getImageUrl } from '../services/api'; // AJOUTE CET IMPORT
 
 const MesFavoris = () => {
   const [favoris, setFavoris] = useState([]);
@@ -47,22 +48,8 @@ const MesFavoris = () => {
     }
   };
 
-  // Fonction pour obtenir l'URL complète de l'image
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) {
-      return 'https://via.placeholder.com/400x300/f8f9fa/6c757d?text=Image+non+disponible';
-    }
-    
-    // Si l'URL commence déjà par http, la retourner telle quelle
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // Sinon, ajouter l'URL du backend
-    return `http://localhost:8080${imageUrl}`;
-  };
+  // SUPPRIME L'ANCIENNE FONCTION getImageUrl et utilise celle du service
 
-  // Supprimer tous les favoris
   const removeAllFavoris = async () => {
     if (!window.confirm('Supprimer tous vos favoris ? Cette action est irréversible.')) return;
     
@@ -136,12 +123,10 @@ const MesFavoris = () => {
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
             {favoris.map((favori) => {
               const produit = favori.produit || favori;
-              const imageUrl = getImageUrl(produit.imageUrl);
               
               return (
                 <div key={produit.id} className="col">
                   <div className="card shadow-sm h-100 border-0">
-                    {/* Image du produit - CONTAINER FIXE */}
                     <div className="position-relative" style={{ height: '250px', overflow: 'hidden' }}>
                       <div 
                         className="w-100 h-100 d-flex align-items-center justify-content-center bg-light"
@@ -151,7 +136,7 @@ const MesFavoris = () => {
                         }}
                       >
                         <img 
-                          src={imageUrl}
+                          src={getImageUrl(produit.imageUrl)} // MODIFIÉ ICI
                           alt={produit.nom}
                           className="img-fluid h-100"
                           style={{ 
@@ -165,14 +150,13 @@ const MesFavoris = () => {
                           onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://via.placeholder.com/400x300/f8f9fa/6c757d?text=Image+non+disponible';
+                            e.target.src = '/default-image.png'; // MODIFIÉ ICI
                             e.target.className = 'img-fluid h-100 w-100';
                             e.target.style.objectFit = 'cover';
                           }}
                         />
                       </div>
                       
-                      {/* Bouton favori */}
                       <button 
                         className="btn btn-danger btn-sm position-absolute rounded-circle p-2"
                         style={{ top: '10px', right: '10px', zIndex: 1 }}
@@ -182,7 +166,6 @@ const MesFavoris = () => {
                         <i className="bi bi-heart-fill"></i>
                       </button>
                       
-                      {/* Badge catégorie */}
                       {produit.categorie && (
                         <span className="position-absolute badge bg-secondary"
                           style={{ top: '10px', left: '10px' }}>
@@ -190,14 +173,12 @@ const MesFavoris = () => {
                         </span>
                       )}
                       
-                      {/* Badge stock */}
                       <span className={`position-absolute badge ${produit.quantite > 0 ? 'bg-success' : 'bg-danger'}`}
                         style={{ bottom: '10px', right: '10px' }}>
                         {produit.quantite > 0 ? 'En stock' : 'Rupture'}
                       </span>
                     </div>
                     
-                    {/* Corps de la carte */}
                     <div className="card-body d-flex flex-column">
                       <h5 className="card-title text-truncate" title={produit.nom}>
                         {produit.nom}
@@ -231,7 +212,6 @@ const MesFavoris = () => {
                       </div>
                     </div>
                     
-                    {/* Pied de carte */}
                     <div className="card-footer bg-white border-top-0 pt-0">
                       <div className="d-grid">
                         <Link 
@@ -249,7 +229,6 @@ const MesFavoris = () => {
             })}
           </div>
           
-          {/* Actions globales */}
           <div className="mt-5 pt-4 border-top">
             <div className="d-flex justify-content-between">
               <Link to="/produits" className="btn btn-outline-secondary">
@@ -272,7 +251,6 @@ const MesFavoris = () => {
               </div>
             </div>
             
-            {/* Statistiques */}
             <div className="mt-4 pt-3 border-top">
               <div className="row text-center">
                 <div className="col-md-4 mb-3">

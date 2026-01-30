@@ -3,23 +3,21 @@ import { useNavigate, Link } from 'react-router-dom';
 import { panierService } from '../services/panierService';
 import { orderService } from '../services/orderService';
 import { authService } from '../services/authService';
+import { getImageUrl } from '../services/api'; // AJOUTE CET IMPORT
 
 const PasserCommande = () => {
   const navigate = useNavigate();
   
-  // États
   const [panier, setPanier] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  // Informations de commande
   const [adresseLivraison, setAdresseLivraison] = useState('');
   const [methodePaiement, setMethodePaiement] = useState('CARTE_BANCAIRE');
   const [notes, setNotes] = useState('');
 
-  // Charger le panier
   useEffect(() => {
     loadPanier();
   }, []);
@@ -34,7 +32,6 @@ const PasserCommande = () => {
       
       setPanier(response.data);
       
-      // Charger l'adresse de l'utilisateur si disponible
       const user = authService.getCurrentUser();
       if (user && user.adresse) {
         setAdresseLivraison(user.adresse);
@@ -48,7 +45,6 @@ const PasserCommande = () => {
     }
   };
 
-  // Calculer le total
   const calculerTotal = () => {
     if (!panier?.items || panier.items.length === 0) return 0;
     
@@ -59,7 +55,6 @@ const PasserCommande = () => {
     }, 0);
   };
 
-  // Valider le formulaire
   const validerFormulaire = () => {
     if (!adresseLivraison.trim()) {
       setError('Veuillez saisir une adresse de livraison');
@@ -74,7 +69,6 @@ const PasserCommande = () => {
     return true;
   };
 
-  // Passer la commande
   const passerCommande = async () => {
     if (!validerFormulaire()) return;
 
@@ -83,17 +77,13 @@ const PasserCommande = () => {
       setError('');
       
       console.log('🛒 Passage de commande...');
-      console.log('Adresse:', adresseLivraison);
-      console.log('Paiement:', methodePaiement);
       
       const response = await orderService.creerCommande(adresseLivraison, methodePaiement);
       
       console.log('✅ Commande créée:', response.data);
       
-      // Afficher le message de succès
       setSuccess(`Commande #${response.data.id} passée avec succès !`);
       
-      // Rediriger vers les commandes après 3 secondes
       setTimeout(() => {
         navigate('/mes-commandes');
       }, 3000);
@@ -106,12 +96,7 @@ const PasserCommande = () => {
     }
   };
 
-  // Fonction pour obtenir l'URL de l'image
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `http://localhost:8080${imageUrl}`;
-  };
+  // SUPPRIME L'ANCIENNE FONCTION getImageUrl et utilise celle du service
 
   if (loading) {
     return (
@@ -158,14 +143,12 @@ const PasserCommande = () => {
       </h1>
 
       <div className="row">
-        {/* Formulaire de commande */}
         <div className="col-lg-8">
           <div className="card shadow-sm mb-4">
             <div className="card-header bg-dark text-white">
               <h4 className="mb-0">Informations de livraison</h4>
             </div>
             <div className="card-body">
-              {/* Adresse de livraison */}
               <div className="mb-4">
                 <label htmlFor="adresseLivraison" className="form-label fw-bold">
                   Adresse de livraison complète *
@@ -184,7 +167,6 @@ const PasserCommande = () => {
                 </div>
               </div>
 
-              {/* Méthode de paiement */}
               <div className="mb-4">
                 <label className="form-label fw-bold">Méthode de paiement *</label>
                 <div className="row">
@@ -223,7 +205,6 @@ const PasserCommande = () => {
                 </div>
               </div>
 
-              {/* Notes */}
               <div className="mb-4">
                 <label htmlFor="notes" className="form-label fw-bold">
                   Notes pour la livraison (optionnel)
@@ -238,7 +219,6 @@ const PasserCommande = () => {
                 />
               </div>
 
-              {/* Boutons d'action */}
               <div className="d-grid gap-2">
                 <button
                   className="btn btn-warning btn-lg py-3"
@@ -264,7 +244,6 @@ const PasserCommande = () => {
                 </Link>
               </div>
 
-              {/* Messages d'erreur/succès */}
               {error && (
                 <div className="alert alert-danger mt-3">
                   <i className="bi bi-exclamation-triangle me-2"></i>
@@ -285,7 +264,6 @@ const PasserCommande = () => {
           </div>
         </div>
 
-        {/* Récapitulatif */}
         <div className="col-lg-4">
           <div className="card shadow-sm sticky-top" style={{ top: '20px' }}>
             <div className="card-header bg-light">
@@ -302,7 +280,6 @@ const PasserCommande = () => {
                 </div>
               ) : (
                 <>
-                  {/* Liste des articles */}
                   <h6 className="mb-3">Articles ({items.length})</h6>
                   <div className="list-group list-group-flush mb-3">
                     {items.slice(0, 3).map((item, index) => (
@@ -312,7 +289,7 @@ const PasserCommande = () => {
                             <div className="bg-light rounded" style={{ width: '60px', height: '60px' }}>
                               {item.produit?.imageUrl ? (
                                 <img
-                                  src={getImageUrl(item.produit.imageUrl)}
+                                  src={getImageUrl(item.produit.imageUrl)} // MODIFIÉ ICI
                                   alt={item.produit.nom}
                                   className="img-fluid rounded"
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -350,7 +327,6 @@ const PasserCommande = () => {
 
                   <hr />
 
-                  {/* Détails du prix */}
                   <div className="mb-3">
                     <div className="d-flex justify-content-between mb-2">
                       <span>Sous-total</span>
@@ -384,7 +360,6 @@ const PasserCommande = () => {
             </div>
           </div>
 
-          {/* Sécurité */}
           <div className="card shadow-sm mt-3">
             <div className="card-body">
               <div className="d-flex align-items-center mb-2">

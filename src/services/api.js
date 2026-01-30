@@ -52,5 +52,17 @@ export const testConnection = async () => {
     return false;
   }
 };
+export const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  
+  // Si le chemin commence déjà par /uploads, ne pas le dupliquer
+  if (imagePath.startsWith('/uploads/')) {
+    return `${API_URL}${imagePath}`;
+  }
+  
+  return `${API_URL}/uploads/${imagePath}`;
+};
 
 export default api;

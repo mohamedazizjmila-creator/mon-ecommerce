@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
+import { getImageUrl } from '../services/api'; // AJOUTE CET IMPORT
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -43,11 +44,9 @@ const Products = () => {
       setError('');
       const response = await productService.getAllProducts();
       
-      // Vérifier si la réponse est un tableau ou non
       if (Array.isArray(response.data)) {
         setProducts(response.data);
       } else if (response.data && response.data.produits) {
-        // Si c'est une catégorie avec produits
         setProducts(response.data.produits);
       } else {
         setProducts([]);
@@ -65,11 +64,9 @@ const Products = () => {
       const response = await categoryService.getAllCategories();
       console.log('Réponse catégories:', response.data);
       
-      // Toujours traiter comme un tableau
       if (Array.isArray(response.data)) {
         setCategories(response.data);
       } else if (response.data) {
-        // Si c'est un objet unique, le mettre dans un tableau
         setCategories([response.data]);
       } else {
         setCategories([]);
@@ -86,7 +83,6 @@ const Products = () => {
       setError('');
       const response = await productService.searchProducts(keyword);
       
-      // Même logique de vérification
       if (Array.isArray(response.data)) {
         setProducts(response.data);
       } else if (response.data && response.data.produits) {
@@ -130,12 +126,10 @@ const Products = () => {
     }
   };
 
-  // Vérifier que categories est un tableau
   const categoriesArray = Array.isArray(categories) ? categories : [];
 
   return (
     <div className="container py-4">
-      {/* En-tête */}
       <div className="row mb-4">
         <div className="col-md-8">
           <h1 className="mb-3">
@@ -162,7 +156,6 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Messages d'erreur */}
       {error && (
         <div className="alert alert-danger alert-dismissible fade show mb-4">
           {error}
@@ -170,7 +163,6 @@ const Products = () => {
         </div>
       )}
 
-      {/* Filtres catégories */}
       <div className="row mb-4">
         <div className="col-12">
           <div className="d-flex flex-wrap gap-2">
@@ -184,7 +176,6 @@ const Products = () => {
               Tous
             </button>
             
-            {/* Afficher les catégories */}
             {categoriesArray.length > 0 ? (
               categoriesArray.map((cat) => (
                 <button
@@ -202,7 +193,6 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Liste des produits */}
       {loading ? (
         <div className="text-center py-5">
           <div className="spinner-border text-warning" role="status">
@@ -217,13 +207,16 @@ const Products = () => {
               {products.map((product) => (
                 <div className="col-md-4 col-lg-3 mb-4" key={product.id}>
                   <div className="card h-100 product-card shadow-sm">
-                    {/* Image produit */}
                     <div className="card-img-top bg-light text-center p-4" style={{ height: '200px' }}>
                       {product.imageUrl ? (
                         <img 
-                          src={`http://localhost:8080${product.imageUrl}`} 
+                          src={getImageUrl(product.imageUrl)} // MODIFIÉ ICI
                           alt={product.nom}
                           style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/default-image.png'; // MODIFIÉ ICI
+                          }}
                         />
                       ) : (
                         <div className="h-100 d-flex align-items-center justify-content-center">
