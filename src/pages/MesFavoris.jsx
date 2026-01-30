@@ -148,12 +148,10 @@ const MesFavoris = () => {
                           }}
                           onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
                           onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/default-image.png'; // MODIFIÉ ICI
-                            e.target.className = 'img-fluid h-100 w-100';
-                            e.target.style.objectFit = 'cover';
-                          }}
+                        onError={(e) => {
+  e.target.onerror = null; // Important!
+  e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
+}}
                         />
                       </div>
                       

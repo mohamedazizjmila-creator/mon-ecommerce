@@ -110,10 +110,10 @@ const Panier = () => {
                             objectFit: 'cover',
                             backgroundColor: '#f8f9fa'
                           }}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/default-image.png'; // CHANGE ICI AUSSI
-                          }}
+                        onError={(e) => {
+  e.target.onerror = null; // Important!
+  e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
+}}
                         />
                       </div>
                       <div className="flex-grow-1 ms-3">

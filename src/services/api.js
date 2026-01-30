@@ -53,24 +53,24 @@ export const testConnection = async () => {
   }
 };
 export const getImageUrl = (imagePath) => {
-  // Si pas d'image, retourne un placeholder
-  if (!imagePath) {
+  // 1. Si pas d'image, retourne un placeholder
+  if (!imagePath || imagePath === 'null' || imagePath === 'undefined') {
     return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop';
   }
   
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
   
-  // Si déjà une URL complète
-  if (imagePath.startsWith('http')) {
+  // 2. Si c'est déjà une URL complète
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
   
-  // Si chemin local
+  // 3. Si ça commence par /uploads/ (comme ton cas: /uploads/produit_...)
   if (imagePath.startsWith('/uploads/')) {
     return `${API_URL}${imagePath}`;
   }
   
-  // Par défaut
+  // 4. Par défaut (ne devrait pas arriver dans ton cas)
   return `${API_URL}/uploads/${imagePath}`;
 };
 export default api;
