@@ -9,8 +9,12 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
+  const [step, setStep] = useState(1); // 1: Formulaire, 2: Vérification OTP
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
   const [adminConnected, setAdminConnected] = useState(false);
   const navigate = useNavigate();
 
@@ -38,9 +42,24 @@ const Register = () => {
     });
   };
 
+  const handleOtpChange = (index, value) => {
+    if (value.length <= 1 && /^\d*$/.test(value)) {
+      const newOtp = [...otp];
+      newOtp[index] = value;
+      setOtp(newOtp);
+      
+      // Auto-focus sur le champ suivant
+      if (value && index < 5) {
+        const nextInput = document.getElementById(`otp-${index + 1}`);
+        if (nextInput) nextInput.focus();
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     
     // Validation
     if (formData.password !== formData.confirmPassword) {
@@ -78,20 +97,16 @@ const Register = () => {
       console.log('📋 Réponse du serveur:', result.data);
       
       if (result.data.success) {
-        // Message de succès
-        alert('🎉 Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
-        
-        // Optionnel: Afficher les détails
-        console.log('✅ Compte créé:', {
-          username: result.data.user?.username,
-          email: result.data.user?.email,
-          role: result.data.user?.role
-        });
-        
-        // Rediriger vers la page de connexion
-        setTimeout(() => {
+        if (result.data.requiresVerification) {
+          // Passer à l'étape de vérification
+          setVerificationEmail(result.data.email);
+          setStep(2);
+          setSuccess('Code de vérification généré. Veuillez vérifier vos emails.');
+        } else {
+          // Rediriger directement vers le login
+          alert('🎉 Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
           navigate('/connexion');
-        }, 1500);
+        }
       } else {
         setError(result.data.message || 'Erreur lors de l\'inscription');
       }
@@ -99,21 +114,14 @@ const Register = () => {
       console.error('💥 Erreur complète:', err);
       
       if (err.response) {
-        // Erreur du serveur
-        console.error('Statut:', err.response.status);
-        console.error('Données:', err.response.data);
-        
         if (err.response.data && err.response.data.message) {
           setError(err.response.data.message);
         } else {
           setError('Erreur serveur: ' + err.response.status);
         }
       } else if (err.request) {
-        // Pas de réponse du serveur
-        console.error('Pas de réponse du serveur');
         setError('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.');
       } else {
-        // Autre erreur
         setError('Erreur: ' + err.message);
       }
     } finally {
@@ -121,6 +129,168 @@ const Register = () => {
     }
   };
 
+  const handleVerifyOtp = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length !== 6) {
+      setError('Veuillez entrer le code à 6 chiffres');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await authService.verifyEmail({
+        email: verificationEmail,
+        otp: otpCode
+      });
+
+      if (result.data.success) {
+        setSuccess('✅ Email vérifié avec succès !');
+        
+        // Attendre 2 secondes puis rediriger
+        setTimeout(() => {
+          navigate('/connexion', { 
+            state: { message: 'Votre compte a été activé avec succès !' } 
+          });
+        }, 2000);
+      } else {
+        setError(result.data.message || 'Code invalide');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur de vérification');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await authService.sendVerificationEmail(verificationEmail);
+      
+      if (result.data.success) {
+        setSuccess('📧 Nouveau code envoyé !');
+        setOtp(['', '', '', '', '', '']); // Réinitialiser les champs OTP
+      } else {
+        setError(result.data.message || 'Erreur lors de l\'envoi');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erreur de connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Étape 2 : Vérification OTP
+  if (step === 2) {
+    return (
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6 col-lg-5">
+            <div className="card shadow border-0">
+              <div className="card-header bg-white border-0 pt-4">
+                <h3 className="text-center mb-0 text-warning">
+                  <i className="bi bi-shield-check me-2"></i>
+                  Vérification Email
+                </h3>
+              </div>
+              
+              <div className="card-body p-4">
+                {error && (
+                  <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    {error}
+                    <button type="button" className="btn-close" onClick={() => setError('')}></button>
+                  </div>
+                )}
+                
+                {success && (
+                  <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    <i className="bi bi-check-circle me-2"></i>
+                    {success}
+                    <button type="button" className="btn-close" onClick={() => setSuccess('')}></button>
+                  </div>
+                )}
+                
+                <div className="text-center mb-4">
+                  <p className="mb-1">Un code à 6 chiffres a été envoyé à :</p>
+                  <p className="fw-bold">{verificationEmail}</p>
+                  <p className="text-muted small">
+                    Entrez le code ci-dessous pour activer votre compte
+                  </p>
+                </div>
+                
+                {/* Champs OTP */}
+                <div className="mb-4">
+                  <div className="d-flex justify-content-center gap-2 mb-3">
+                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                      <input
+                        key={index}
+                        id={`otp-${index}`}
+                        type="text"
+                        maxLength="1"
+                        value={otp[index]}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        className="form-control text-center"
+                        style={{ width: '50px', height: '60px', fontSize: '24px' }}
+                        disabled={loading}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="d-grid mb-3">
+                  <button 
+                    type="button" 
+                    className="btn btn-warning btn-lg"
+                    onClick={handleVerifyOtp}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Vérification...
+                      </>
+                    ) : (
+                      'Vérifier le code'
+                    )}
+                  </button>
+                </div>
+                
+                <div className="text-center">
+                  <button 
+                    type="button" 
+                    className="btn btn-link text-decoration-none"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                  >
+                    <i className="bi bi-arrow-clockwise me-1"></i>
+                    Renvoyer le code
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-center mt-4">
+              <button 
+                type="button" 
+                className="btn btn-outline-dark"
+                onClick={() => setStep(1)}
+              >
+                <i className="bi bi-arrow-left me-1"></i>
+                Retour à l'inscription
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Étape 1 : Formulaire d'inscription
   return (
     <div className="container py-5">
       <div className="row justify-content-center">
@@ -286,6 +456,7 @@ const Register = () => {
               <li>Choisissez un nom d'utilisateur facile à retenir</li>
               <li>Utilisez un mot de passe fort avec chiffres et lettres</li>
               <li>Gardez vos informations de connexion en sécurité</li>
+              <li>Vous recevrez un code de vérification par email</li>
             </ul>
           </div>
         </div>
