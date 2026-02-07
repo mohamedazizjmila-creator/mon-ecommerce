@@ -1,4 +1,4 @@
-// components/Auth/Login.jsx - SANS Google pour le moment
+// components/Auth/Login.jsx - Version SIMPLE
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
@@ -32,15 +32,6 @@ const Login = () => {
       console.log('✅ Réponse:', response.data);
       
       if (response.data.success) {
-        // Si vérification email requise
-        if (response.data.requiresVerification) {
-          setError('Veuillez vérifier votre email avant de vous connecter');
-          navigate('/verify-email', { 
-            state: { email: response.data.email } 
-          });
-          return;
-        }
-        
         navigate('/');
       } else {
         setError(response.data.message || 'Identifiants incorrects');
@@ -134,11 +125,6 @@ const Login = () => {
                     Pas encore de compte ?{' '}
                     <Link to="/inscription" className="text-warning fw-bold text-decoration-none">
                       S'inscrire
-                    </Link>
-                  </p>
-                  <p className="mb-0 mt-2">
-                    <Link to="/verify-email" className="text-decoration-none text-muted small">
-                      Problème de vérification email ?
                     </Link>
                   </p>
                 </div>
