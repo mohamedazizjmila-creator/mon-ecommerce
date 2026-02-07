@@ -10,6 +10,7 @@ const Register = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [adminConnected, setAdminConnected] = useState(false);
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const Register = () => {
         const response = await authService.checkAdminSession();
         if (response.data.adminConnected) {
           setAdminConnected(true);
-          console.log('ℹ️ Un admin est déjà connecté au backend');
+          console.log('ℹ️ Admin connecté détecté:', response.data.adminUsername);
         }
       } catch (error) {
         console.log('Pas de session admin active');
@@ -36,11 +37,13 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError(''); // Effacer les erreurs quand l'utilisateur tape
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     
     // Validation
     if (formData.password !== formData.confirmPassword) {
@@ -58,63 +61,56 @@ const Register = () => {
       return;
     }
     
+    if (formData.username.length < 3) {
+      setError('Le nom d\'utilisateur doit contenir au moins 3 caractères');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      console.log('🔄 Début de l\'inscription...');
+      console.log('🔄 Tentative d\'inscription...');
       
-      // Afficher info si admin connecté
-      if (adminConnected) {
-        console.log('📢 Utilisation de l\'inscription publique (admin connecté)');
-      }
-      
-      // Utiliser l'inscription PUBLIQUE
+      // Utiliser l'inscription publique
       const result = await authService.registerPublic({
         username: formData.username,
         email: formData.email,
         password: formData.password
       });
       
-      console.log('📋 Réponse du serveur:', result.data);
+      console.log('📋 Réponse serveur:', result.data);
       
       if (result.data.success) {
-        // Message de succès
-        alert('🎉 Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+        setSuccess('🎉 Compte créé avec succès ! Redirection vers la page de connexion...');
         
-        // Optionnel: Afficher les détails
-        console.log('✅ Compte créé:', {
-          username: result.data.user?.username,
-          email: result.data.user?.email,
-          role: result.data.user?.role
+        // Réinitialiser le formulaire
+        setFormData({
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
         });
         
-        // Rediriger vers la page de connexion
+        // Rediriger après 2 secondes
         setTimeout(() => {
           navigate('/connexion');
-        }, 1500);
+        }, 2000);
       } else {
         setError(result.data.message || 'Erreur lors de l\'inscription');
       }
     } catch (err) {
-      console.error('💥 Erreur complète:', err);
+      console.error('❌ Erreur détaillée:', err);
       
-      if (err.response) {
-        // Erreur du serveur
-        console.error('Statut:', err.response.status);
-        console.error('Données:', err.response.data);
-        
-        if (err.response.data && err.response.data.message) {
-          setError(err.response.data.message);
-        } else {
-          setError('Erreur serveur: ' + err.response.status);
-        }
-      } else if (err.request) {
-        // Pas de réponse du serveur
-        console.error('Pas de réponse du serveur');
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.status === 409) {
+        setError('Ce nom d\'utilisateur est déjà pris');
+      } else if (err.response?.status === 400) {
+        setError('Données invalides. Vérifiez les informations saisies.');
+      } else if (err.message?.includes('Network Error')) {
         setError('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.');
       } else {
-        // Autre erreur
-        setError('Erreur: ' + err.message);
+        setError('Erreur serveur. Code: ' + (err.response?.status || 'UNKNOWN'));
       }
     } finally {
       setLoading(false);
@@ -125,17 +121,16 @@ const Register = () => {
     <div className="container py-5">
       <div className="row justify-content-center">
         <div className="col-md-6 col-lg-5">
-          {/* Message d'information */}
+          {/* Message d'information admin */}
           {adminConnected && (
             <div className="alert alert-info alert-dismissible fade show mb-3" role="alert">
-              <i className="bi bi-info-circle me-2"></i>
-              <strong>Information:</strong> Un administrateur est actuellement connecté au système.
-              Votre inscription n'affectera pas sa session.
+              <i className="bi bi-shield-check me-2"></i>
+              <strong>Mode admin:</strong> Un administrateur est connecté au backend.
+              Votre inscription utilisera le mode public.
               <button 
                 type="button" 
                 className="btn-close" 
                 onClick={() => setAdminConnected(false)}
-                aria-label="Fermer"
               ></button>
             </div>
           )}
@@ -153,12 +148,15 @@ const Register = () => {
                 <div className="alert alert-danger alert-dismissible fade show" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
                   {error}
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={() => setError('')}
-                    aria-label="Fermer"
-                  ></button>
+                  <button type="button" className="btn-close" onClick={() => setError('')}></button>
+                </div>
+              )}
+              
+              {success && (
+                <div className="alert alert-success alert-dismissible fade show" role="alert">
+                  <i className="bi bi-check-circle me-2"></i>
+                  {success}
+                  <button type="button" className="btn-close" onClick={() => setSuccess('')}></button>
                 </div>
               )}
               
@@ -166,7 +164,7 @@ const Register = () => {
                 <div className="mb-3">
                   <label className="form-label">
                     <i className="bi bi-person me-2"></i>
-                    Nom d'utilisateur
+                    Nom d'utilisateur *
                   </label>
                   <input
                     type="text"
@@ -178,14 +176,16 @@ const Register = () => {
                     placeholder="Choisissez un nom d'utilisateur unique"
                     minLength="3"
                     maxLength="30"
+                    disabled={loading}
+                    autoComplete="username"
                   />
-                  <div className="form-text">3 à 30 caractères</div>
+                  <div className="form-text">Entre 3 et 30 caractères</div>
                 </div>
                 
                 <div className="mb-3">
                   <label className="form-label">
                     <i className="bi bi-envelope me-2"></i>
-                    Adresse Email
+                    Adresse Email *
                   </label>
                   <input
                     type="email"
@@ -195,13 +195,15 @@ const Register = () => {
                     onChange={handleChange}
                     required
                     placeholder="exemple@email.com"
+                    disabled={loading}
+                    autoComplete="email"
                   />
                 </div>
                 
                 <div className="mb-3">
                   <label className="form-label">
                     <i className="bi bi-lock me-2"></i>
-                    Mot de passe
+                    Mot de passe *
                   </label>
                   <input
                     type="password"
@@ -212,6 +214,8 @@ const Register = () => {
                     required
                     placeholder="Minimum 6 caractères"
                     minLength="6"
+                    disabled={loading}
+                    autoComplete="new-password"
                   />
                   <div className="form-text">Au moins 6 caractères</div>
                 </div>
@@ -219,7 +223,7 @@ const Register = () => {
                 <div className="mb-4">
                   <label className="form-label">
                     <i className="bi bi-lock-fill me-2"></i>
-                    Confirmer le mot de passe
+                    Confirmer le mot de passe *
                   </label>
                   <input
                     type="password"
@@ -230,6 +234,8 @@ const Register = () => {
                     required
                     placeholder="Répétez le mot de passe"
                     minLength="6"
+                    disabled={loading}
+                    autoComplete="new-password"
                   />
                 </div>
                 
@@ -242,7 +248,7 @@ const Register = () => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Création du compte...
+                        Création en cours...
                       </>
                     ) : (
                       <>
@@ -262,30 +268,32 @@ const Register = () => {
                     </Link>
                   </p>
                   <p className="mb-0 small text-muted">
-                    En vous inscrivant, vous acceptez nos conditions d'utilisation.
+                    En vous inscrivant, vous acceptez nos conditions d'utilisation et politique de confidentialité.
                   </p>
                 </div>
               </form>
             </div>
             
-            <div className="card-footer bg-white border-0 pb-4 text-center">
-              <Link to="/" className="text-decoration-none text-dark">
-                <i className="bi bi-arrow-left me-1"></i>
-                Retour à l'accueil
-              </Link>
+            <div className="card-footer bg-white border-0 pb-4">
+              <div className="text-center">
+                <Link to="/" className="text-decoration-none text-dark">
+                  <i className="bi bi-arrow-left me-1"></i>
+                  Retour à l'accueil
+                </Link>
+              </div>
             </div>
           </div>
           
           {/* Conseils */}
           <div className="alert alert-light border mt-4" role="alert">
-            <h6 className="alert-heading">
-              <i className="bi bi-lightbulb text-warning me-2"></i>
+            <h6 className="alert-heading text-warning">
+              <i className="bi bi-lightbulb me-2"></i>
               Conseils pour votre compte
             </h6>
             <ul className="mb-0 small">
-              <li>Choisissez un nom d'utilisateur facile à retenir</li>
-              <li>Utilisez un mot de passe fort avec chiffres et lettres</li>
+              <li>Utilisez un mot de passe fort (majuscules, minuscules, chiffres)</li>
               <li>Gardez vos informations de connexion en sécurité</li>
+              <li>Utilisez une adresse email valide pour récupérer votre compte</li>
             </ul>
           </div>
         </div>

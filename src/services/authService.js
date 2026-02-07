@@ -3,7 +3,7 @@ import api, { apiNoCookies } from './api';
 export const authService = {
   // ============ INSCRIPTION ============
   
-  // 1. INSCRIPTION PUBLIQUE (pour les clients frontend - sans cookies)
+  // INSCRIPTION PUBLIQUE (utilise l'endpoint public)
   registerPublic: async (userData) => {
     try {
       console.log('📝 Tentative d\'inscription publique:', userData.username);
@@ -11,8 +11,8 @@ export const authService = {
       const response = await apiNoCookies.post('/auth/public/register', {
         username: userData.username,
         email: userData.email,
-        password: userData.password,
-        role: 'USER' // Toujours USER pour les clients
+        password: userData.password
+        // Le rôle USER est défini automatiquement par le backend
       });
       
       console.log('✅ Inscription publique réussie:', response.data);
@@ -23,39 +23,35 @@ export const authService = {
     }
   },
   
-  // 2. Inscription normale (gardée pour compatibilité)
+  // Inscription normale
   register: (userData) => api.post('/auth/register', userData),
   
   // ============ CONNEXION ============
   
-  // Méthode principale de connexion (utilise le nouvel endpoint)
+  // Méthode principale de connexion SIMPLIFIÉE
   login: async (credentials) => {
     try {
-      console.log('🔐 Tentative de connexion frontend:', credentials.username);
+      console.log('🔐 Tentative de connexion:', credentials.username);
       
-      // ESSAYER D'ABORD l'endpoint spécifique frontend
-      try {
-        const response = await api.post('/auth/login', credentials);
-        
-        if (response.data.success && response.data.user) {
-          localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-          console.log('✅ Connexion frontend réussie via /login');
-        }
-        
-        return response;
-      } catch (frontendError) {
-        console.log('🔄 Fallback à l\'endpoint normal /login');
-        
-        // Fallback à l'endpoint normal
-        const response = await api.post('/auth/login', credentials);
-        
-        if (response.data.success && response.data.user) {
-          localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-          console.log('✅ Connexion réussie via /login');
-        }
-        
-        return response;
+      // Utiliser directement l'endpoint principal
+      const response = await api.post('/auth/login', credentials);
+      
+      console.log('📋 Réponse login:', response.data);
+      
+      if (response.data.success && response.data.user) {
+        // Stocker les informations utilisateur dans localStorage
+        const userData = {
+          id: response.data.user.id,
+          username: response.data.user.username,
+          email: response.data.user.email,
+          role: response.data.user.role,
+          sessionId: response.data.sessionId
+        };
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        console.log('✅ Utilisateur stocké dans localStorage');
       }
+      
+      return response;
     } catch (error) {
       console.error('❌ Erreur de connexion:', error);
       throw error;
@@ -64,13 +60,11 @@ export const authService = {
   
   // ============ SESSION ADMIN ============
   
-  // Vérifier si un admin est connecté (optionnel)
+  // Vérifier si un admin est connecté (simplifié)
   checkAdminSession: async () => {
     try {
       const response = await api.get('/auth/check-admin-session');
-      if (response.data.adminConnected) {
-        console.log('👑 Admin connecté détecté:', response.data.adminUsername);
-      }
+      console.log('🔍 Session admin:', response.data);
       return response;
     } catch (error) {
       console.log('ℹ️ Pas de session admin détectée');
@@ -82,12 +76,13 @@ export const authService = {
   
   logout: async () => {
     try {
-      localStorage.removeItem('currentUser');
       const response = await api.post('/auth/logout');
+      localStorage.removeItem('currentUser');
       console.log('👋 Déconnexion réussie');
       return response;
     } catch (error) {
       console.error('❌ Erreur déconnexion:', error);
+      localStorage.removeItem('currentUser');
       throw error;
     }
   },
@@ -115,13 +110,12 @@ export const authService = {
     return localStorage.getItem('currentUser') !== null;
   },
   
-  // Vérifier si l'utilisateur courant est admin
   isAdmin: () => {
     const user = authService.getCurrentUser();
     return user && user.role === 'ADMIN';
   },
   
-  // Debug: Voir l'état de la session
+  // DEBUG
   debugSession: async () => {
     try {
       const response = await api.get('/auth/debug/session');
