@@ -1,4 +1,4 @@
-// services/authService.js
+// services/authService.js - Version SIMPLE
 import api from './api';
 
 export const authService = {
@@ -7,11 +7,11 @@ export const authService = {
     try {
       console.log('📝 Tentative d\'inscription:', userData.username);
       
-      const response = await api.post('/auth/public/register', {
+      const response = await api.post('/auth/register', {
         username: userData.username,
         email: userData.email,
-        password: userData.password,
-        role: 'USER'
+        password: userData.password
+        // Le rôle "USER" est défini automatiquement côté serveur
       });
       
       console.log('✅ Inscription réussie:', response.data);
