@@ -35,11 +35,11 @@ export const authService = {
       
       // ESSAYER D'ABORD l'endpoint spécifique frontend
       try {
-        const response = await api.post('/auth/frontend/login', credentials);
+        const response = await api.post('/auth/login', credentials);
         
         if (response.data.success && response.data.user) {
           localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-          console.log('✅ Connexion frontend réussie via /frontend/login');
+          console.log('✅ Connexion frontend réussie via /login');
         }
         
         return response;
