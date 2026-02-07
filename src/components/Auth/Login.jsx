@@ -25,7 +25,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('🔐 Tentative de connexion...');
+      console.log('🔐 Tentative de connexion USER...');
       
       const response = await authService.login(formData);
       
@@ -37,16 +37,19 @@ const Login = () => {
         setError(response.data.message || 'Identifiants incorrects');
       }
     } catch (err) {
-      console.error('❌ Erreur de connexion:', err);
+      console.error('❌ Erreur connexion:', err);
       
-      if (err.response?.status === 401) {
+      // Messages d'erreur spécifiques
+      if (err.message?.includes('comptes admin') || 
+          err.message?.includes('Compte admin') ||
+          err.message?.includes('panel admin')) {
+        setError('❌ ' + err.message + ' Veuillez utiliser le panel d\'administration.');
+      } else if (err.response?.status === 401) {
         setError('Nom d\'utilisateur ou mot de passe incorrect');
-      } else if (err.response?.status === 404) {
-        setError('Service d\'authentification non disponible');
       } else if (err.message?.includes('Network Error')) {
         setError('Impossible de se connecter au serveur');
       } else {
-        setError('Erreur: ' + (err.response?.data?.message || err.message));
+        setError(err.message || 'Erreur de connexion');
       }
     } finally {
       setLoading(false);
@@ -61,8 +64,11 @@ const Login = () => {
             <div className="card-header bg-white border-0 pt-4">
               <h3 className="text-center mb-0 text-warning">
                 <i className="bi bi-box-arrow-in-right me-2"></i>
-                Connexion à AzizShop
+                Connexion Client
               </h3>
+              <p className="text-center text-muted small mb-0">
+                Interface réservée aux utilisateurs clients
+              </p>
             </div>
             
             <div className="card-body p-4">
@@ -76,7 +82,10 @@ const Login = () => {
               
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label">Nom d'utilisateur</label>
+                  <label className="form-label">
+                    <i className="bi bi-person me-2"></i>
+                    Nom d'utilisateur
+                  </label>
                   <input
                     type="text"
                     className="form-control"
@@ -90,7 +99,10 @@ const Login = () => {
                 </div>
                 
                 <div className="mb-4">
-                  <label className="form-label">Mot de passe</label>
+                  <label className="form-label">
+                    <i className="bi bi-lock me-2"></i>
+                    Mot de passe
+                  </label>
                   <input
                     type="password"
                     className="form-control"
@@ -101,13 +113,6 @@ const Login = () => {
                     placeholder="Votre mot de passe"
                     disabled={loading}
                   />
-                </div>
-                
-                <div className="mb-3 form-check">
-                  <input type="checkbox" className="form-check-input" id="rememberMe" />
-                  <label className="form-check-label" htmlFor="rememberMe">
-                    Se souvenir de moi
-                  </label>
                 </div>
                 
                 <div className="d-grid mb-3">
@@ -122,7 +127,7 @@ const Login = () => {
                         Connexion en cours...
                       </>
                     ) : (
-                      'Se connecter'
+                      'Se connecter en tant que Client'
                     )}
                   </button>
                 </div>
@@ -136,6 +141,15 @@ const Login = () => {
                   </p>
                 </div>
               </form>
+            </div>
+            
+            <div className="card-footer bg-white border-0">
+              <div className="alert alert-light border-0 text-center mb-0">
+                <small className="text-muted">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Les administrateurs doivent utiliser le panel d'administration séparé
+                </small>
+              </div>
             </div>
           </div>
           

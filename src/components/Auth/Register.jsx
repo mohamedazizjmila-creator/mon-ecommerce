@@ -44,7 +44,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      console.log('🔄 Début de l\'inscription...');
+      console.log('🔄 Inscription USER en cours...');
       
       const result = await authService.register({
         username: formData.username,
@@ -52,16 +52,16 @@ const Register = () => {
         password: formData.password
       });
       
-      console.log('📋 Réponse du serveur:', result.data);
+      console.log('📋 Réponse:', result.data);
       
       if (result.data.success) {
-        alert('🎉 Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+        alert('🎉 Compte client créé avec succès ! Vous pouvez maintenant vous connecter.');
         navigate('/connexion');
       } else {
         setError(result.data.message || 'Erreur lors de l\'inscription');
       }
     } catch (err) {
-      console.error('💥 Erreur complète:', err);
+      console.error('💥 Erreur inscription:', err);
       
       if (err.response) {
         if (err.response.data && err.response.data.message) {
@@ -87,8 +87,11 @@ const Register = () => {
             <div className="card-header bg-white border-0 pt-4">
               <h3 className="text-center mb-0 text-warning">
                 <i className="bi bi-person-plus me-2"></i>
-                Créer un compte AzizShop
+                Créer un compte Client
               </h3>
+              <p className="text-center text-muted small mb-0">
+                Tous les comptes créés ici sont des comptes clients
+              </p>
             </div>
             
             <div className="card-body p-4">
@@ -100,7 +103,6 @@ const Register = () => {
                     type="button" 
                     className="btn-close" 
                     onClick={() => setError('')}
-                    aria-label="Fermer"
                   ></button>
                 </div>
               )}
@@ -118,7 +120,7 @@ const Register = () => {
                     value={formData.username}
                     onChange={handleChange}
                     required
-                    placeholder="Choisissez un nom d'utilisateur unique"
+                    placeholder="Choisissez un nom d'utilisateur"
                     minLength="3"
                     maxLength="30"
                   />
@@ -185,12 +187,12 @@ const Register = () => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Création du compte...
+                        Création du compte client...
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-check-circle me-2"></i>
-                        Créer mon compte
+                        <i className="bi bi-person-check me-2"></i>
+                        Créer mon compte Client
                       </>
                     )}
                   </button>
@@ -203,9 +205,6 @@ const Register = () => {
                       <i className="bi bi-box-arrow-in-right me-1"></i>
                       Se connecter
                     </Link>
-                  </p>
-                  <p className="mb-0 small text-muted">
-                    En vous inscrivant, vous acceptez nos conditions d'utilisation.
                   </p>
                 </div>
               </form>
@@ -220,15 +219,14 @@ const Register = () => {
           </div>
           
           <div className="alert alert-light border mt-4" role="alert">
-            <h6 className="alert-heading">
-              <i className="bi bi-lightbulb text-warning me-2"></i>
-              Conseils pour votre compte
+            <h6 className="alert-heading text-warning">
+              <i className="bi bi-shield-check me-2"></i>
+              Information importante
             </h6>
-            <ul className="mb-0 small">
-              <li>Choisissez un nom d'utilisateur facile à retenir</li>
-              <li>Utilisez un mot de passe fort avec chiffres et lettres</li>
-              <li>Gardez vos informations de connexion en sécurité</li>
-            </ul>
+            <p className="mb-0 small">
+              Ce formulaire crée uniquement des <strong>comptes clients</strong>.
+              Les comptes administrateurs sont créés et gérés séparément via le panel d'administration.
+            </p>
           </div>
         </div>
       </div>

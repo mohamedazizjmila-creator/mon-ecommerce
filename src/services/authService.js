@@ -1,20 +1,20 @@
-// services/authService.js - Version SIMPLE
+// services/authService.js - Pour FRONTEND (USER seulement)
 import api from './api';
 
 export const authService = {
-  // ============ INSCRIPTION ============
+  // ============ INSCRIPTION (toujours USER) ============
   register: async (userData) => {
     try {
-      console.log('📝 Tentative d\'inscription:', userData.username);
+      console.log('📝 Inscription USER:', userData.username);
       
       const response = await api.post('/auth/register', {
         username: userData.username,
         email: userData.email,
         password: userData.password
-        // Le rôle "USER" est défini automatiquement côté serveur
+        // Le rôle "USER" est forcé côté serveur
       });
       
-      console.log('✅ Inscription réussie:', response.data);
+      console.log('✅ Inscription USER réussie:', response.data);
       return response;
     } catch (error) {
       console.error('❌ Erreur inscription:', error);
@@ -22,16 +22,27 @@ export const authService = {
     }
   },
   
-  // ============ CONNEXION ============
+  // ============ CONNEXION (USER seulement) ============
   login: async (credentials) => {
     try {
-      console.log('🔐 Tentative de connexion:', credentials.username);
+      console.log('🔐 Connexion USER:', credentials.username);
       
       const response = await api.post('/auth/login', credentials);
       
+      // Vérifier si c'est un ADMIN qui tente de se connecter
+      if (response.data.redirectToBackend) {
+        throw new Error('Les comptes admin doivent se connecter via le panel admin');
+      }
+      
       if (response.data.success && response.data.user) {
+        // Vérifier que c'est bien un USER
+        if (response.data.user.role !== 'USER') {
+          throw new Error('Accès non autorisé - Compte admin détecté');
+        }
+        
         localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-        console.log('✅ Connexion réussie');
+        localStorage.setItem('loginSource', 'frontend');
+        console.log('✅ Connexion USER réussie');
       }
       
       return response;
@@ -41,10 +52,11 @@ export const authService = {
     }
   },
   
-  // ============ UTILITAIRES ============
+  // ============ DÉCONNEXION ============
   logout: async () => {
     try {
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('loginSource');
       const response = await api.post('/auth/logout');
       console.log('👋 Déconnexion réussie');
       return response;
@@ -54,32 +66,59 @@ export const authService = {
     }
   },
   
-  checkSession: () => api.get('/auth/check-session'),
+  // ============ VÉRIFICATION SESSION ============
+  checkSession: async () => {
+    try {
+      const response = await api.get('/auth/check-session');
+      
+      // Si session invalide (ex: admin sur frontend), déconnecter
+      if (!response.data.authenticated && response.data.message) {
+        console.log('⚠️  Session invalide:', response.data.message);
+        await authService.logout();
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Erreur vérification session:', error);
+      return { data: { authenticated: false } };
+    }
+  },
   
+  // ============ UTILITAIRES ============
   getCurrentUser: () => {
     const userStr = localStorage.getItem('currentUser');
     if (userStr) {
       try {
-        return JSON.parse(userStr);
+        const user = JSON.parse(userStr);
+        // Vérifier que c'est bien un USER
+        if (user.role !== 'USER') {
+          authService.logout();
+          return null;
+        }
+        return user;
       } catch (e) {
         localStorage.removeItem('currentUser');
+        localStorage.removeItem('loginSource');
         return null;
       }
     }
     return null;
   },
   
-  setCurrentUser: (user) => {
-    localStorage.setItem('currentUser', JSON.stringify(user));
+  isAuthenticated: () => {
+    const user = authService.getCurrentUser();
+    const loginSource = localStorage.getItem('loginSource');
+    return user !== null && loginSource === 'frontend';
   },
   
-  isAuthenticated: () => {
-    return localStorage.getItem('currentUser') !== null;
+  isUser: () => {
+    const user = authService.getCurrentUser();
+    return user && user.role === 'USER';
   },
   
   isAdmin: () => {
-    const user = authService.getCurrentUser();
-    return user && user.role === 'ADMIN';
+    // Toujours false pour le frontend
+    return false;
   },
   
   checkUsername: async (username) => {
