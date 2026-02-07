@@ -1,4 +1,4 @@
-// components/Auth/Register.jsx - Version SIMPLE
+// components/Auth/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
@@ -12,36 +12,20 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState(true);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [e.target.name]: e.target.value
     });
-    
-    // Vérifier le username en temps réel
-    if (name === 'username' && value.length >= 3) {
-      checkUsernameAvailability(value);
-    }
-  };
-
-  const checkUsernameAvailability = async (username) => {
-    try {
-      const exists = await authService.checkUsername(username);
-      setUsernameAvailable(!exists);
-    } catch (err) {
-      console.error('Erreur vérification username:', err);
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    // Validation simple
+    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Les mots de passe ne correspondent pas');
       return;
@@ -57,15 +41,10 @@ const Register = () => {
       return;
     }
     
-    if (!usernameAvailable) {
-      setError('Ce nom d\'utilisateur est déjà pris');
-      return;
-    }
-    
     setLoading(true);
 
     try {
-      console.log('🔄 Inscription en cours...');
+      console.log('🔄 Début de l\'inscription...');
       
       const result = await authService.register({
         username: formData.username,
@@ -73,7 +52,7 @@ const Register = () => {
         password: formData.password
       });
       
-      console.log('✅ Réponse serveur:', result.data);
+      console.log('📋 Réponse du serveur:', result.data);
       
       if (result.data.success) {
         alert('🎉 Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
@@ -82,14 +61,18 @@ const Register = () => {
         setError(result.data.message || 'Erreur lors de l\'inscription');
       }
     } catch (err) {
-      console.error('❌ Erreur inscription:', err);
+      console.error('💥 Erreur complète:', err);
       
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.message) {
-        setError(err.message);
+      if (err.response) {
+        if (err.response.data && err.response.data.message) {
+          setError(err.response.data.message);
+        } else {
+          setError('Erreur serveur: ' + err.response.status);
+        }
+      } else if (err.request) {
+        setError('Impossible de se connecter au serveur.');
       } else {
-        setError('Erreur lors de l\'inscription. Veuillez réessayer.');
+        setError('Erreur: ' + err.message);
       }
     } finally {
       setLoading(false);
@@ -104,7 +87,7 @@ const Register = () => {
             <div className="card-header bg-white border-0 pt-4">
               <h3 className="text-center mb-0 text-warning">
                 <i className="bi bi-person-plus me-2"></i>
-                Créer un compte
+                Créer un compte AzizShop
               </h3>
             </div>
             
@@ -117,33 +100,36 @@ const Register = () => {
                     type="button" 
                     className="btn-close" 
                     onClick={() => setError('')}
+                    aria-label="Fermer"
                   ></button>
                 </div>
               )}
               
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label">Nom d'utilisateur *</label>
+                  <label className="form-label">
+                    <i className="bi bi-person me-2"></i>
+                    Nom d'utilisateur
+                  </label>
                   <input
                     type="text"
-                    className={`form-control ${formData.username.length >= 3 && !usernameAvailable ? 'is-invalid' : ''}`}
+                    className="form-control"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
                     required
-                    placeholder="ex: john_doe"
+                    placeholder="Choisissez un nom d'utilisateur unique"
                     minLength="3"
+                    maxLength="30"
                   />
-                  {formData.username.length >= 3 && (
-                    <div className={`form-text ${!usernameAvailable ? 'text-danger' : 'text-success'}`}>
-                      <i className={`bi ${usernameAvailable ? 'bi-check-circle' : 'bi-x-circle'} me-1`}></i>
-                      {usernameAvailable ? 'Nom disponible' : 'Nom déjà pris'}
-                    </div>
-                  )}
+                  <div className="form-text">3 à 30 caractères</div>
                 </div>
                 
                 <div className="mb-3">
-                  <label className="form-label">Email *</label>
+                  <label className="form-label">
+                    <i className="bi bi-envelope me-2"></i>
+                    Adresse Email
+                  </label>
                   <input
                     type="email"
                     className="form-control"
@@ -156,7 +142,10 @@ const Register = () => {
                 </div>
                 
                 <div className="mb-3">
-                  <label className="form-label">Mot de passe *</label>
+                  <label className="form-label">
+                    <i className="bi bi-lock me-2"></i>
+                    Mot de passe
+                  </label>
                   <input
                     type="password"
                     className="form-control"
@@ -167,11 +156,14 @@ const Register = () => {
                     placeholder="Minimum 6 caractères"
                     minLength="6"
                   />
-                  <div className="form-text">6 caractères minimum</div>
+                  <div className="form-text">Au moins 6 caractères</div>
                 </div>
                 
                 <div className="mb-4">
-                  <label className="form-label">Confirmer le mot de passe *</label>
+                  <label className="form-label">
+                    <i className="bi bi-lock-fill me-2"></i>
+                    Confirmer le mot de passe
+                  </label>
                   <input
                     type="password"
                     className="form-control"
@@ -179,7 +171,7 @@ const Register = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
-                    placeholder="Retapez votre mot de passe"
+                    placeholder="Confirmez votre mot de passe"
                     minLength="6"
                   />
                 </div>
@@ -187,51 +179,56 @@ const Register = () => {
                 <div className="d-grid mb-3">
                   <button 
                     type="submit" 
-                    className="btn btn-warning btn-lg"
+                    className="btn btn-warning btn-lg fw-bold"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Inscription...
+                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Création du compte...
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-person-plus me-2"></i>
-                        S'inscrire
+                        <i className="bi bi-check-circle me-2"></i>
+                        Créer mon compte
                       </>
                     )}
                   </button>
                 </div>
+                
+                <div className="text-center mt-4">
+                  <p className="mb-2">
+                    Vous avez déjà un compte ?{' '}
+                    <Link to="/connexion" className="text-warning fw-bold text-decoration-none">
+                      <i className="bi bi-box-arrow-in-right me-1"></i>
+                      Se connecter
+                    </Link>
+                  </p>
+                  <p className="mb-0 small text-muted">
+                    En vous inscrivant, vous acceptez nos conditions d'utilisation.
+                  </p>
+                </div>
               </form>
-              
-              <div className="text-center mt-3">
-                <p className="mb-2">
-                  Déjà un compte ?{' '}
-                  <Link to="/connexion" className="text-warning fw-bold">
-                    Se connecter
-                  </Link>
-                </p>
-              </div>
             </div>
             
             <div className="card-footer bg-white border-0 pb-4 text-center">
-              <Link to="/" className="text-decoration-none text-muted">
+              <Link to="/" className="text-decoration-none text-dark">
                 <i className="bi bi-arrow-left me-1"></i>
                 Retour à l'accueil
               </Link>
             </div>
           </div>
           
-          <div className="alert alert-light border mt-4">
-            <h6 className="alert-heading text-warning">
-              <i className="bi bi-info-circle me-2"></i>
-              Information
+          <div className="alert alert-light border mt-4" role="alert">
+            <h6 className="alert-heading">
+              <i className="bi bi-lightbulb text-warning me-2"></i>
+              Conseils pour votre compte
             </h6>
-            <p className="mb-0 small">
-              Tous les comptes créés ici sont des comptes utilisateurs standards.
-              Les comptes administrateurs sont créés séparément.
-            </p>
+            <ul className="mb-0 small">
+              <li>Choisissez un nom d'utilisateur facile à retenir</li>
+              <li>Utilisez un mot de passe fort avec chiffres et lettres</li>
+              <li>Gardez vos informations de connexion en sécurité</li>
+            </ul>
           </div>
         </div>
       </div>

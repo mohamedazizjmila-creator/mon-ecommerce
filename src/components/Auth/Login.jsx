@@ -1,4 +1,4 @@
-// components/Auth/Login.jsx - Version SIMPLE
+// components/Auth/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
@@ -32,23 +32,21 @@ const Login = () => {
       console.log('✅ Réponse:', response.data);
       
       if (response.data.success) {
-        // Rediriger vers la page d'accueil
         navigate('/');
       } else {
         setError(response.data.message || 'Identifiants incorrects');
       }
     } catch (err) {
-      console.error('❌ Erreur connexion:', err);
+      console.error('❌ Erreur de connexion:', err);
       
-      // Messages d'erreur spécifiques
-      if (err.message?.includes('compte admin') || err.message?.includes('admin non autorisé')) {
-        setError(err.message);
-      } else if (err.response?.status === 401) {
+      if (err.response?.status === 401) {
         setError('Nom d\'utilisateur ou mot de passe incorrect');
+      } else if (err.response?.status === 404) {
+        setError('Service d\'authentification non disponible');
       } else if (err.message?.includes('Network Error')) {
         setError('Impossible de se connecter au serveur');
       } else {
-        setError(err.message || 'Erreur de connexion');
+        setError('Erreur: ' + (err.response?.data?.message || err.message));
       }
     } finally {
       setLoading(false);
@@ -63,7 +61,7 @@ const Login = () => {
             <div className="card-header bg-white border-0 pt-4">
               <h3 className="text-center mb-0 text-warning">
                 <i className="bi bi-box-arrow-in-right me-2"></i>
-                Connexion
+                Connexion à AzizShop
               </h3>
             </div>
             
@@ -72,11 +70,7 @@ const Login = () => {
                 <div className="alert alert-danger alert-dismissible fade show" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
                   {error}
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={() => setError('')}
-                  ></button>
+                  <button type="button" className="btn-close" onClick={() => setError('')}></button>
                 </div>
               )}
               
@@ -91,6 +85,7 @@ const Login = () => {
                     onChange={handleChange}
                     required
                     placeholder="Votre nom d'utilisateur"
+                    disabled={loading}
                   />
                 </div>
                 
@@ -104,7 +99,15 @@ const Login = () => {
                     onChange={handleChange}
                     required
                     placeholder="Votre mot de passe"
+                    disabled={loading}
                   />
+                </div>
+                
+                <div className="mb-3 form-check">
+                  <input type="checkbox" className="form-check-input" id="rememberMe" />
+                  <label className="form-check-label" for="rememberMe">
+                    Se souvenir de moi
+                  </label>
                 </div>
                 
                 <div className="d-grid mb-3">
@@ -115,42 +118,32 @@ const Login = () => {
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Connexion...
+                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Connexion en cours...
                       </>
                     ) : (
                       'Se connecter'
                     )}
                   </button>
                 </div>
+                
+                <div className="text-center">
+                  <p className="mb-0">
+                    Pas encore de compte ?{' '}
+                    <Link to="/inscription" className="text-warning fw-bold text-decoration-none">
+                      S'inscrire
+                    </Link>
+                  </p>
+                </div>
               </form>
-              
-              <div className="text-center">
-                <p className="mb-2">
-                  Pas encore de compte ?{' '}
-                  <Link to="/inscription" className="text-warning fw-bold">
-                    S'inscrire
-                  </Link>
-                </p>
-                <p className="mb-0 small text-muted">
-                  <Link to="/" className="text-decoration-none">
-                    <i className="bi bi-arrow-left me-1"></i>
-                    Retour à l'accueil
-                  </Link>
-                </p>
-              </div>
             </div>
           </div>
           
-          <div className="alert alert-light border mt-4">
-            <h6 className="alert-heading text-warning">
-              <i className="bi bi-shield-check me-2"></i>
-              Sécurité
-            </h6>
-            <p className="mb-0 small">
-              Cette interface est réservée aux utilisateurs standards.
-              Les administrateurs doivent utiliser le panel d'administration.
-            </p>
+          <div className="text-center mt-4">
+            <Link to="/" className="text-decoration-none text-dark">
+              <i className="bi bi-arrow-left me-1"></i>
+              Retour à l'accueil
+            </Link>
           </div>
         </div>
       </div>
