@@ -1,5 +1,4 @@
-// components/Auth/Register.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 
@@ -12,7 +11,25 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adminConnected, setAdminConnected] = useState(false);
   const navigate = useNavigate();
+
+  // Vérifier si un admin est connecté
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const response = await authService.checkAdminSession();
+        if (response.data.adminConnected) {
+          setAdminConnected(true);
+          console.log('ℹ️ Un admin est déjà connecté au backend');
+        }
+      } catch (error) {
+        console.log('Pas de session admin active');
+      }
+    };
+    
+    checkAdmin();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -44,34 +61,59 @@ const Register = () => {
     setLoading(true);
 
     try {
-      console.log('🔄 Inscription USER en cours...');
+      console.log('🔄 Début de l\'inscription...');
       
-      const result = await authService.register({
+      // Afficher info si admin connecté
+      if (adminConnected) {
+        console.log('📢 Utilisation de l\'inscription publique (admin connecté)');
+      }
+      
+      // Utiliser l'inscription PUBLIQUE
+      const result = await authService.registerPublic({
         username: formData.username,
         email: formData.email,
         password: formData.password
       });
       
-      console.log('📋 Réponse:', result.data);
+      console.log('📋 Réponse du serveur:', result.data);
       
       if (result.data.success) {
-        alert('🎉 Compte client créé avec succès ! Vous pouvez maintenant vous connecter.');
-        navigate('/connexion');
+        // Message de succès
+        alert('🎉 Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+        
+        // Optionnel: Afficher les détails
+        console.log('✅ Compte créé:', {
+          username: result.data.user?.username,
+          email: result.data.user?.email,
+          role: result.data.user?.role
+        });
+        
+        // Rediriger vers la page de connexion
+        setTimeout(() => {
+          navigate('/connexion');
+        }, 1500);
       } else {
         setError(result.data.message || 'Erreur lors de l\'inscription');
       }
     } catch (err) {
-      console.error('💥 Erreur inscription:', err);
+      console.error('💥 Erreur complète:', err);
       
       if (err.response) {
+        // Erreur du serveur
+        console.error('Statut:', err.response.status);
+        console.error('Données:', err.response.data);
+        
         if (err.response.data && err.response.data.message) {
           setError(err.response.data.message);
         } else {
           setError('Erreur serveur: ' + err.response.status);
         }
       } else if (err.request) {
-        setError('Impossible de se connecter au serveur.');
+        // Pas de réponse du serveur
+        console.error('Pas de réponse du serveur');
+        setError('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.');
       } else {
+        // Autre erreur
         setError('Erreur: ' + err.message);
       }
     } finally {
@@ -83,15 +125,27 @@ const Register = () => {
     <div className="container py-5">
       <div className="row justify-content-center">
         <div className="col-md-6 col-lg-5">
+          {/* Message d'information */}
+          {adminConnected && (
+            <div className="alert alert-info alert-dismissible fade show mb-3" role="alert">
+              <i className="bi bi-info-circle me-2"></i>
+              <strong>Information:</strong> Un administrateur est actuellement connecté au système.
+              Votre inscription n'affectera pas sa session.
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setAdminConnected(false)}
+                aria-label="Fermer"
+              ></button>
+            </div>
+          )}
+          
           <div className="card shadow border-0">
             <div className="card-header bg-white border-0 pt-4">
               <h3 className="text-center mb-0 text-warning">
                 <i className="bi bi-person-plus me-2"></i>
-                Créer un compte Client
+                Créer un compte AzizShop
               </h3>
-              <p className="text-center text-muted small mb-0">
-                Tous les comptes créés ici sont des comptes clients
-              </p>
             </div>
             
             <div className="card-body p-4">
@@ -103,6 +157,7 @@ const Register = () => {
                     type="button" 
                     className="btn-close" 
                     onClick={() => setError('')}
+                    aria-label="Fermer"
                   ></button>
                 </div>
               )}
@@ -120,7 +175,7 @@ const Register = () => {
                     value={formData.username}
                     onChange={handleChange}
                     required
-                    placeholder="Choisissez un nom d'utilisateur"
+                    placeholder="Choisissez un nom d'utilisateur unique"
                     minLength="3"
                     maxLength="30"
                   />
@@ -173,7 +228,7 @@ const Register = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
-                    placeholder="Confirmez votre mot de passe"
+                    placeholder="Répétez le mot de passe"
                     minLength="6"
                   />
                 </div>
@@ -187,12 +242,12 @@ const Register = () => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Création du compte client...
+                        Création du compte...
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-person-check me-2"></i>
-                        Créer mon compte Client
+                        <i className="bi bi-check-circle me-2"></i>
+                        Créer mon compte
                       </>
                     )}
                   </button>
@@ -206,6 +261,9 @@ const Register = () => {
                       Se connecter
                     </Link>
                   </p>
+                  <p className="mb-0 small text-muted">
+                    En vous inscrivant, vous acceptez nos conditions d'utilisation.
+                  </p>
                 </div>
               </form>
             </div>
@@ -218,15 +276,17 @@ const Register = () => {
             </div>
           </div>
           
+          {/* Conseils */}
           <div className="alert alert-light border mt-4" role="alert">
-            <h6 className="alert-heading text-warning">
-              <i className="bi bi-shield-check me-2"></i>
-              Information importante
+            <h6 className="alert-heading">
+              <i className="bi bi-lightbulb text-warning me-2"></i>
+              Conseils pour votre compte
             </h6>
-            <p className="mb-0 small">
-              Ce formulaire crée uniquement des <strong>comptes clients</strong>.
-              Les comptes administrateurs sont créés et gérés séparément via le panel d'administration.
-            </p>
+            <ul className="mb-0 small">
+              <li>Choisissez un nom d'utilisateur facile à retenir</li>
+              <li>Utilisez un mot de passe fort avec chiffres et lettres</li>
+              <li>Gardez vos informations de connexion en sécurité</li>
+            </ul>
           </div>
         </div>
       </div>
