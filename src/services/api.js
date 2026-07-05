@@ -55,19 +55,15 @@ export const testConnection = async () => {
 export const getImageUrl = (imagePath) => {
   // 1. Si PAS d'image dans la base
   if (!imagePath || imagePath === 'null' || imagePath === 'undefined') {
-    return null; // Retourne null pour gérer dans le composant
+    return null;
   }
   
   const BACKEND_URL = 'https://projet-api-v2.onrender.com';
   
-  // 2. Si c'est déjà une URL complète
+  // 2. Si c'est déjà une URL complète, la garder telle quelle
+  // (backend, LoremFlickr, ou tout autre CDN d'images produits)
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    // Si c'est une URL de TON backend, la garder
-    if (imagePath.includes('projet-api-v2.onrender.com')) {
-      return imagePath;
-    }
-    // Sinon, c'est une URL externe → l'IGNORER
-    return null;
+    return imagePath;
   }
   
   // 3. Si c'est un chemin relatif (/uploads/...)
